@@ -22,22 +22,52 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
-const config: HardhatUserConfig = {
-  solidity: "0.8.4",
+https: module.exports = {
+  defaultNetwork: "hardhat",
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.9",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+    ],
+  },
+  mocha: {
+    timeout: 200000,
+  },
   networks: {
-    ropsten: {
-      url: process.env.ROPSTEN_URL || "",
+    // mainnet: {
+    //   url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
+    //   accounts: [`${process.env.MAINNET_PRIVATE_KEY}`],
+    // },
+    goerli: {
+      url: `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY_GOERLI}`,
       accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        [`${process.env.DEV_PRIVATE_KEY}`],
+    },
+    rinkeby: {
+      url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY_RINKEBY}`,
+      accounts:
+        [`${process.env.DEV_PRIVATE_KEY}`]
+    },
+    ropsten: {
+      url: `https://eth-ropsten.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY_ROPSTEN}`,
+      accounts:
+        [`${process.env.DEV_PRIVATE_KEY}`],
     },
   },
   gasReporter: {
-    enabled: process.env.REPORT_GAS !== undefined,
+    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
     currency: "USD",
+    showTimeSpent: true,
+    gasPrice: 60,
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },
 };
-
-export default config;

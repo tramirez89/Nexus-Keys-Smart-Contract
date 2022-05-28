@@ -1,14 +1,13 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 
 contract NexusKeys is ERC1155Supply, Ownable {
     string public website = "https://nexuslegends.io";
+    event PermanentURI(string _value, uint256 indexed _id);
 
     uint256 public MAX_MINT = 4;
 
@@ -122,8 +121,23 @@ contract NexusKeys is ERC1155Supply, Ownable {
         _mint(msg.sender, keyId, amount, "");
     }
 
+    function mint(uint256 amount, uint256 keyId) external payable callerIsUser {
+        require(saleOpen, "Sale not started");
+        require(
+            amount + totalSupply(keyId) <= Keys[keyId].maxSupply,
+            "Max supply reached"
+        );
+        require(Keys[keyId].maxSupply > 0, "Key does not exist");
+        require(minted[msg.sender] + amount < MAX_MINT, "Exceeds max mint");
+
+        minted[msg.sender] += amount;
+        _mint(msg.sender, keyId, amount, "");
+    }
+
     /**
-     * OWNER FUNCTIONS
+     * @notice Create a Nexus Key.
+     * @param keyId The token id to set this key to.
+     * @param key ["metadataURI", mintPrice, maxSupply]
      */
     function createKey(uint256 keyId, Key calldata key) external onlyOwner {
         require(!frozen, "Frozen.");
@@ -175,6 +189,11 @@ contract NexusKeys is ERC1155Supply, Ownable {
     // Permanently freeze metadata and minting functions
     function freeze() external onlyOwner {
         frozen = true;
+
+        emit PermanentURI(Keys[0].metadataURI, 0);
+        emit PermanentURI(Keys[1].metadataURI, 1);
+        emit PermanentURI(Keys[2].metadataURI, 2);
+        emit PermanentURI(Keys[3].metadataURI, 3);
     }
 
     /**
