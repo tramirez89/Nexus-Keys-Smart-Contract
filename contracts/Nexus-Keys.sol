@@ -205,6 +205,10 @@ contract NexusKeys is ERC1155Supply, Ownable {
     return string(abi.encodePacked(Keys[_id].metadataURI));
   }
 
+  function getKey(uint256 id) external view returns (Key memory) {
+    return Keys[id];
+  }
+
   function getMintedQty(
     address addr,
     uint256 mintType // 1: Minted, 2: allowlistMinted, 3: Claimed
@@ -216,5 +220,9 @@ contract NexusKeys is ERC1155Supply, Ownable {
     } else {
       return claimed[addr];
     }
+  }
+
+  function getSalesStatus() external view returns (bool, bool) {
+    return (saleOpen, publicSaleOpen);
   }
 }
