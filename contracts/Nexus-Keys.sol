@@ -15,7 +15,6 @@ contract NexusKeys is ERC1155Supply, Ownable {
   bool publicSaleOpen;
   bool frozen;
   bytes32 merkleRoot;
-  bytes32 claimMerkleRoot;
 
   struct Key {
     string metadataURI;
@@ -93,7 +92,9 @@ contract NexusKeys is ERC1155Supply, Ownable {
     allowlistMinted[msg.sender] += total;
 
     for (uint256 i; i < amount.length; i++) {
-      _mint(msg.sender, i, amount[i], "");
+      if (amount[i] > 0) {
+        _mint(msg.sender, i, amount[i], "");
+      }
     }
   }
 
@@ -101,7 +102,7 @@ contract NexusKeys is ERC1155Supply, Ownable {
     uint256 keyId,
     bytes32[] calldata merkleProof,
     ALLOC calldata alloc
-  ) external callerIsUser {
+  ) external payable callerIsUser {
     require(saleOpen, "Sale not started");
     require(!frozen, "Frozen.");
     require(1 + totalSupply(keyId) <= Keys[keyId].maxSupply, "Max supply reached");
@@ -110,7 +111,7 @@ contract NexusKeys is ERC1155Supply, Ownable {
     bytes32 leaf = keccak256(
       abi.encodePacked(msg.sender, alloc.t, alloc.c, alloc.e, alloc.l, alloc.i, alloc.f, alloc.n)
     );
-    require(MerkleProof.verify(merkleProof, claimMerkleRoot, leaf), "Invalid proof.");
+    require(MerkleProof.verify(merkleProof, merkleRoot, leaf), "Invalid proof.");
 
     claimed[msg.sender]++;
     _mint(msg.sender, keyId, 1, "");
@@ -181,10 +182,6 @@ contract NexusKeys is ERC1155Supply, Ownable {
     merkleRoot = _merkleRoot;
   }
 
-  function updateClaimMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
-    claimMerkleRoot = _merkleRoot;
-  }
-
   // Permanently freeze metadata and minting functions
   function freeze() external onlyOwner {
     frozen = true;
@@ -224,5 +221,10 @@ contract NexusKeys is ERC1155Supply, Ownable {
 
   function getSalesStatus() external view returns (bool, bool) {
     return (saleOpen, publicSaleOpen);
+  }
+
+  // ** - ADMIN - ** //
+  function withdrawEther(address payable _to, uint256 _amount) external onlyOwner {
+    _to.transfer(_amount);
   }
 }
