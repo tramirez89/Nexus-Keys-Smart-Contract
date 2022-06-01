@@ -94,8 +94,8 @@ contract NexusKeys is ERC1155Supply, Ownable {
     );
     require(MerkleProof.verify(merkleProof, merkleRoot, leaf), "Invalid proof.");
 
-    require(allowlistMinted[msg.sender] + total < MAX_MINT, "Exceeds max mint");
-    require(allowlistMinted[msg.sender] + total < alloc.e + alloc.l, "Exceeds your allocation");
+    require(allowlistMinted[msg.sender] + total <= MAX_MINT, "Exceeds max mint");
+    require(allowlistMinted[msg.sender] + total <= alloc.e + alloc.l, "Exceeds your allocation");
 
     allowlistMinted[msg.sender] += total;
 
@@ -125,16 +125,28 @@ contract NexusKeys is ERC1155Supply, Ownable {
     _mint(msg.sender, keyId, 1, "");
   }
 
-  function mint(uint256 amount, uint256 keyId) external payable callerIsUser {
-    require(publicSaleOpen, "Sale not started");
+  function mint(uint256[] calldata amount) external payable callerIsUser {
     require(!frozen, "Frozen.");
-    require(amount + totalSupply(keyId) <= Keys[keyId].maxSupply, "Max supply reached");
-    require(Keys[keyId].maxSupply > 0, "Key does not exist");
-    require(minted[msg.sender] + amount < MAX_MINT, "Exceeds max mint");
-    require(msg.value == (Keys[keyId].mintPrice * amount), "Incorrect ETH amount");
+    require(publicSaleOpen, "Sale not started");
+    require(amount.length == 4, "Bad data.");
+    uint256 totalPrice;
+    uint256 total;
+    for (uint256 i; i < amount.length; i++) {
+      require(Keys[i].maxSupply > 0, "Key does not exist");
+      require(amount[i] + totalSupply(i) <= Keys[i].maxSupply, "Max supply reached");
 
-    minted[msg.sender] += amount;
-    _mint(msg.sender, keyId, amount, "");
+      total += amount[i];
+      totalPrice += Keys[i].mintPrice * amount[i];
+    }
+    require(msg.value == totalPrice, "Incorrect ETH amount");
+    require(minted[msg.sender] + total <= MAX_MINT, "Exceeds max mint");
+
+    minted[msg.sender] += total;
+    for (uint256 i; i < amount.length; i++) {
+      if (amount[i] > 0) {
+        _mint(msg.sender, i, amount[i], "");
+      }
+    }
   }
 
   /**
