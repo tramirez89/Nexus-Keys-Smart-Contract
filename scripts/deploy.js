@@ -6,7 +6,7 @@ async function main() {
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
   const Token = await ethers.getContractFactory("NexusKeys");
-  const token = await Token.deploy();
+  const token = await Token.deploy("Nexus Keys", "NEXUSKEYS");
 
   console.log("Token address:", token.address);
 }

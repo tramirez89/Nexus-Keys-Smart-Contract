@@ -7,6 +7,9 @@ import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 
 contract NexusKeys is ERC1155Supply, Ownable {
   string public website = "https://nexuslegends.io";
+  string public name_;
+  string public symbol_;
+
   event PermanentURI(string _value, uint256 indexed _id);
 
   uint256 public MAX_MINT = 4;
@@ -27,12 +30,9 @@ contract NexusKeys is ERC1155Supply, Ownable {
   mapping(address => uint256) public allowlistMinted;
   mapping(address => uint256) public claimed;
 
-  string public name_;
-  string public symbol_;
-
-  constructor() ERC1155("ipfs://") {
-    name_ = "Nexus Keys";
-    symbol_ = "NEXUSKEYS";
+  constructor(string memory _name, string memory _symbol) ERC1155("ipfs://") {
+    name_ = _name;
+    symbol_ = _symbol;
   }
 
   modifier callerIsUser() {
@@ -40,17 +40,25 @@ contract NexusKeys is ERC1155Supply, Ownable {
     _;
   }
 
+  function name() public view returns (string memory) {
+    return name_;
+  }
+
+  function symbol() public view returns (string memory) {
+    return symbol_;
+  }
+
   function ownerMint(
-    address[] calldata _to,
+    address _to,
     uint256[] calldata _amount,
     uint256[] calldata keyId
   ) external onlyOwner {
     require(!frozen, "Frozen.");
-    require(_to.length == _amount.length, "same length required");
+    require(keyId.length == _amount.length, "same length required");
 
-    for (uint256 i; i < _to.length; i++) {
+    for (uint256 i; i < _amount.length; i++) {
       require(totalSupply(keyId[i]) + _amount[i] <= Keys[keyId[i]].maxSupply, "Max supply reached");
-      _mint(_to[i], keyId[i], _amount[i], "");
+      _mint(_to, keyId[i], _amount[i], "");
     }
   }
 
